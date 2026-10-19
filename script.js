@@ -1,30 +1,30 @@
 'use strict';
 /* ショート動画 離脱UI プロトタイプ(色彩低減)
  *
- * 視聴時間が長くなるほど、動画の彩度を少しずつ下げる。
+ * 開いてから60秒かけて、画面全体の彩度を100%から0%(完全なモノクロ)まで、一定の速さで下げる。
  * URLパラメータ(研究者用):
- *   ?speed=30   時間の進み方(1秒 = speed/60 分。既定 30 → 1秒 = 0.5分)
- *   ?start=5    彩度の低下を始める時刻(分)
- *   ?end=30     彩度が最小になる時刻(分)
- *   ?to=0.2     最小の彩度(1 = 通常、0 = 白黒)
- *   ?debug=1    経過時間・彩度の表示と、+5分/リセットのボタンを出す
+ *   ?duration=60  彩度が最小になるまでの時間(秒)。既定 60
+ *   ?delay=0      彩度の低下を始めるまでの時間(秒)。既定 0
+ *   ?to=0         最小の彩度(1 = 通常、0 = 白黒)。既定 0
+ *   ?label=0      画面上部の「彩度 NN%」の表示を隠す
+ *   ?debug=1      経過時間・彩度の表示と、+10秒/最初からのボタンを出す
  */
 
 /* ---------------- 設定 ---------------- */
 const params = new URLSearchParams(location.search);
 const num = (k, d) => { const v = parseFloat(params.get(k)); return Number.isFinite(v) ? v : d; };
 const CFG = {
-  speed: num('speed', 30),
-  start: num('start', 5),
-  end:   num('end', 30),
-  to:    num('to', 0.2),
+  delay:    num('delay', 0),       // 秒
+  duration: num('duration', 30),   // 秒
+  to:       num('to', 0),
 };
 
+const VERSION = 'v4';
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const ramp = (m, a, b, from, to) => m <= a ? from : m >= b ? to : from + (to - from) * (m - a) / (b - a);
-const fmtTime = (m) => {
-  const s = Math.floor(m * 60);
+const fmtTime = (sec) => {
+  const s = Math.floor(sec);
   return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
 };
 const fmtCount = (n) => n >= 10000 ? (n / 10000).toFixed(1) + '万' : n.toLocaleString('ja-JP');
@@ -71,23 +71,31 @@ function makeVideo(i) {
     likes: Math.floor(800 + r() * 90000), comments: Math.floor(20 + r() * 5000), saves: Math.floor(100 + r() * 40000),
   };
 }
-const rgbaCache = {};
-function rgba(hex, a) {
-  let c = rgbaCache[hex];
-  if (!c) c = rgbaCache[hex] = [1, 3, 5].map((p) => parseInt(hex.slice(p, p + 2), 16));
-  return `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const rgbCache = {};
+// 色を、同じ明るさの灰色に向かって薄める(sat=1: そのまま / sat=0: 白黒)
+function rgbOf(hex) {
+  let c = rgbCache[hex];
+  if (!c) c = rgbCache[hex] = [1, 3, 5].map((p) => parseInt(hex.slice(p, p + 2), 16));
+  return c;
 }
-function drawVideo(card, t) {
+function rgba(hex, a, sat) {
+  let c = rgbCache[hex];
+  if (!c) c = rgbCache[hex] = [1, 3, 5].map((p) => parseInt(hex.slice(p, p + 2), 16));
+  const lum = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+  const m = (x) => Math.round(clamp(lum + (x - lum) * sat, 0, 255));
+  return `rgba(${m(c[0])},${m(c[1])},${m(c[2])},${a})`;
+}
+function drawVideo(card, t, sat) {
   const { ctx, canvas, v } = card, w = canvas.width, h = canvas.height;
   const g = ctx.createLinearGradient(0, 0, w * .6, h);
-  g.addColorStop(0, v.pal[0]); g.addColorStop(1, '#050505');
+  g.addColorStop(0, rgba(v.pal[0], 1, sat)); g.addColorStop(1, '#050505');
   ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
   for (const b of v.blobs) {
     const cx = (b.x + .12 * Math.sin(t * b.fx + b.ph)) * w;
     const cy = (b.y + .09 * Math.cos(t * b.fy + b.ph)) * h;
     const rad = b.r * h * .62;
     const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
-    rg.addColorStop(0, rgba(b.c, 1)); rg.addColorStop(.55, rgba(b.c, .7)); rg.addColorStop(1, rgba(b.c, 0));
+    rg.addColorStop(0, rgba(b.c, 1, sat)); rg.addColorStop(.55, rgba(b.c, .7, sat)); rg.addColorStop(1, rgba(b.c, 0, sat));
     ctx.fillStyle = rg; ctx.fillRect(0, 0, w, h);
   }
 }
@@ -235,34 +243,54 @@ feed.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 /* ---------------- 色彩低減 ---------------- */
-let simMin = 0;                       // 模擬の経過時間(分)
-const saturationAt = (m) => ramp(m, CFG.start, CFG.end, 1, CFG.to);
+let elapsed = 0;                      // 開いてからの経過時間(秒)
+const saturationAt = (sec) => ramp(sec, CFG.delay, CFG.delay + CFG.duration, 1, CFG.to);
+
+/* ---------------- 画面全体(アイコン・ボタンを含む)の彩度 ---------------- */
+// 動画だけでなく、アイコンやボタンの色も同じ割合で薄める
+const app = $('#app');
+const UI_COLORS = { '--av1': '#e8c9a0', '--av2': '#c99a6a', '--badge': '#fe2c55', '--heart': '#fe2c55', '--save': '#ffc928' };
+function desatHex(hex, sat) {
+  const c = rgbOf(hex), lum = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+  const m = (x) => Math.round(clamp(lum + (x - lum) * sat, 0, 255));
+  return `rgb(${m(c[0])},${m(c[1])},${m(c[2])})`;
+}
+let lastUiSat = -1;
+const satPill = $('#satPill');
+if (params.get('label') === '0') satPill.hidden = true;
+function applyUiSaturation(sat) {
+  if (Math.abs(sat - lastUiSat) < 0.004) return;
+  lastUiSat = sat;
+  for (const k in UI_COLORS) app.style.setProperty(k, desatHex(UI_COLORS[k], sat));
+  satPill.textContent = '彩度 ' + Math.round(sat * 100) + '%';
+}
 
 /* ---------------- 研究者用の表示 ---------------- */
 const hud = $('#hud');
 if (params.get('debug') === '1') hud.hidden = false;
-$('#bSkip').addEventListener('click', () => { simMin += 5; });
-$('#bReset').addEventListener('click', () => { simMin = 0; watched = 1; });
+$('#bSkip').addEventListener('click', () => { elapsed += 10; });
+$('#bReset').addEventListener('click', () => { elapsed = 0; watched = 1; });
 
 /* ---------------- メインループ ---------------- */
 let last = performance.now(), vclock = 0, hudT = 0;
 function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  simMin += dt * CFG.speed / 60;
+  elapsed += dt;
   vclock += dt;
 
-  const sat = saturationAt(simMin);
-  feed.style.setProperty('--sat', sat.toFixed(3));
+  const sat = saturationAt(elapsed);
+  for (const c of [cur, nxt]) if (c) drawVideo(c, vclock + c.i * 3.1, sat);
 
-  for (const c of [cur, nxt]) if (c) drawVideo(c, vclock + c.i * 3.1);
+  applyUiSaturation(sat);
 
   hudT += dt;
   if (!hud.hidden && hudT > 0.25) {
     hudT = 0;
-    $('#hTime').textContent = fmtTime(simMin);
+    $('#hTime').textContent = fmtTime(elapsed);
     $('#hSat').textContent = Math.round(sat * 100) + '%';
     $('#hVids').textContent = watched + '本';
+    $('#hVer').textContent = VERSION;
   }
   requestAnimationFrame(frame);
 }
@@ -285,6 +313,6 @@ document.addEventListener('contextmenu', (e) => e.preventDefault());
 
 // 動作確認用(コンソールから状態を読む・時間を進める)
 window.__proto = {
-  state: () => ({ idx, watched, simMin: +simMin.toFixed(2), cards: feed.querySelectorAll('.card').length }),
-  setTime: (m) => { simMin = m; },
+  state: () => ({ idx, watched, elapsed: +elapsed.toFixed(2), cards: feed.querySelectorAll('.card').length }),
+  setTime: (sec) => { elapsed = sec; },
 };
