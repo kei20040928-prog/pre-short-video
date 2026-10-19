@@ -1,7 +1,9 @@
+/* ショート動画 離脱UI(11案) の見た目 */
 :root{
   --nav-h:78px;
   --tabs-top:calc(env(safe-area-inset-top,0px) + 14px);
-  --sat:1;
+  --social:1;                                   /* A11: いいね等の濃さ */
+  --av1:#e8c9a0; --av2:#c99a6a; --badge:#fe2c55; --heart:#fe2c55; --save:#ffc928;   /* A07: JSが書き換える */
 }
 *,*::before,*::after{box-sizing:border-box}
 html,body{
@@ -11,6 +13,9 @@ html,body{
   -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
 }
 body{position:fixed; inset:0; width:100%; overflow:hidden; user-select:none; -webkit-user-select:none}
+button{font-family:inherit; touch-action:manipulation}
+input,textarea{-webkit-user-select:text; user-select:text; font-family:inherit}
+[hidden]{display:none !important}
 
 /* スマホ:全画面 / PC:スマホ幅で中央に表示 */
 #app{position:relative; width:100%; height:100%; overflow:hidden; background:#000}
@@ -19,7 +24,9 @@ body{position:fixed; inset:0; width:100%; overflow:hidden; user-select:none; -we
   #app{width:390px; height:min(844px,100dvh); border-radius:36px}
 }
 
-/* ---------- フィード ---------- */
+/* ---------- 画面 ---------- */
+#screen{position:absolute; inset:0; transition:transform .9s cubic-bezier(.4,.1,.2,1)}
+#screen.flip{transform:rotate(180deg)}
 #feed{position:absolute; inset:0; overflow:hidden; touch-action:none; background:#000}
 .card{position:absolute; inset:0; will-change:transform}
 .card canvas{position:absolute; inset:0; width:100%; height:100%}
@@ -34,18 +41,21 @@ body{position:fixed; inset:0; width:100%; overflow:hidden; user-select:none; -we
 .meta .music{font-size:13px}
 .rail{position:absolute; right:10px; bottom:calc(var(--nav-h) + 30px); display:flex; flex-direction:column; align-items:center; gap:18px}
 .rail .item{display:flex; flex-direction:column; align-items:center; gap:3px}
+.rail .social{opacity:var(--social)}
 .rail .cnt{font-size:12px; font-weight:700; text-shadow:0 1px 3px rgba(0,0,0,.65)}
-.avatar{width:46px; height:46px; border-radius:50%; background:linear-gradient(145deg,var(--av1,#e8c9a0),var(--av2,#c99a6a)); border:2px solid #fff; position:relative}
-.avatar span{position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:17px; height:17px; border-radius:50%; background:var(--badge,#fe2c55); color:#fff; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; border:1.5px solid #fff; line-height:1}
+.avatar{width:46px; height:46px; border-radius:50%; background:linear-gradient(145deg,var(--av1),var(--av2)); border:2px solid #fff; position:relative}
+.avatar span{position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:17px; height:17px; border-radius:50%; background:var(--badge); color:#fff; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; border:1.5px solid #fff; line-height:1}
 .avatar.followed span{display:none}
-.ibtn{border:0; background:none; padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; color:#fff; filter:drop-shadow(0 1px 3px rgba(0,0,0,.55)); touch-action:manipulation}
+.ibtn{border:0; background:none; padding:0; width:40px; height:40px; display:flex; align-items:center; justify-content:center; color:#fff; filter:drop-shadow(0 1px 3px rgba(0,0,0,.55))}
 .ibtn svg{fill:#fff}
-.ibtn.heart.on svg{fill:var(--heart,#fe2c55)}
-.ibtn.save.on svg{fill:var(--save,#ffc928)}
+.ibtn.heart.on svg{fill:var(--heart)}
+.ibtn.save.on svg{fill:var(--save)}
 
 .tabs{position:absolute; top:var(--tabs-top); left:0; right:0; display:flex; justify-content:center; gap:22px; z-index:10; pointer-events:none; font-size:16px; font-weight:600; color:rgba(255,255,255,.6); text-shadow:0 1px 3px rgba(0,0,0,.5)}
 .tabs .on{color:#fff; position:relative}
 .tabs .on::after{content:""; position:absolute; left:8%; right:8%; bottom:-7px; height:2.5px; background:#fff; border-radius:2px}
+.pills{position:absolute; top:calc(var(--tabs-top) + 34px); left:0; right:0; z-index:10; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:6px}
+.pill{background:rgba(0,0,0,.42); border-radius:16px; padding:5px 16px; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap}
 
 .nav{position:absolute; left:0; right:0; bottom:0; height:var(--nav-h); padding-bottom:14px; background:#000; z-index:10; display:flex; justify-content:space-around; align-items:center; border-top:.5px solid rgba(255,255,255,.08)}
 .nav div{display:flex; flex-direction:column; align-items:center; gap:3px; font-size:9.5px; font-weight:600; color:rgba(255,255,255,.55)}
@@ -53,8 +63,60 @@ body{position:fixed; inset:0; width:100%; overflow:hidden; user-select:none; -we
 .nav svg{width:24px; height:24px; fill:#fff}
 .nav .plus{width:44px; height:30px; border-radius:8px; background:#fff; color:#000; font-size:22px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1}
 
-/* ---------- 研究者用 ---------- */
-#hud{position:absolute; top:calc(var(--tabs-top) + 84px); left:10px; z-index:20; background:rgba(0,0,0,.6); border-radius:12px; padding:8px 10px; font-size:11px; line-height:1.7}
-#hud b{font-variant-numeric:tabular-nums}
-#hud .btns{display:flex; gap:6px; margin-top:4px}
-#hud button{border:1px solid rgba(255,255,255,.4); background:rgba(255,255,255,.12); color:#fff; border-radius:8px; padding:4px 8px; font-size:11px; font-family:inherit; touch-action:manipulation}
+/* A12 方向の矢印 */
+#cue{position:absolute; left:50%; top:50%; z-index:30; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; gap:10px; pointer-events:none}
+#cue svg{width:96px; height:96px; fill:rgba(255,255,255,.88); filter:drop-shadow(0 2px 6px rgba(0,0,0,.45)); transition:transform .25s}
+#cue span{font-size:12px; font-weight:700; background:rgba(0,0,0,.45); padding:4px 10px; border-radius:11px}
+#cue.shake{animation:shake .35s}
+@keyframes shake{0%,100%{translate:0}25%{translate:-8px}75%{translate:8px}}
+#toast{position:absolute; left:50%; top:62%; transform:translateX(-50%); z-index:35; background:rgba(0,0,0,.6); padding:8px 16px; border-radius:16px; font-size:14px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap}
+#toast.show{opacity:1}
+
+/* ---------- ダイアログ(A18 A19 A21) ---------- */
+#dlg{position:absolute; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.6); padding:20px}
+#dlg.kb{align-items:flex-start; padding-top:72px}                 /* キーボードが出ている間は上に寄せる */
+.card-d{width:100%; max-width:300px; background:#fff; color:#2c2c2a; border-radius:18px; padding:24px 20px 18px; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.card-d .t{font-size:16px; font-weight:700; line-height:1.5; margin-bottom:6px}
+.card-d .s{font-size:12px; color:#8a897f; margin-bottom:10px}
+.card-d .quote{background:#f4f3ee; border-radius:12px; padding:14px 12px; font-size:15px; line-height:1.6; color:#3a3a37; margin:10px 0 4px; word-break:break-word}
+.card-d textarea,.card-d input{width:100%; border:1.3px solid #c9c7bd; border-radius:10px; padding:9px 10px; font-size:16px; color:#2c2c2a; background:#fff}
+.card-d textarea{height:72px; resize:none; text-align:left; line-height:1.5}
+.card-d input{width:84px; text-align:center}
+.card-d .hint{font-size:12px; color:#8a897f; margin:4px 0 6px}
+.dbtn{display:block; width:100%; border:1.3px solid #c9c7bd; background:#fff; color:#55544f; border-radius:20px; padding:11px 0; margin-top:9px; font-size:14px; font-weight:700; cursor:pointer}
+.dbtn.primary{background:#2c2c2a; border-color:#2c2c2a; color:#fff}
+.dbtn:disabled{opacity:.35}
+.dlink{background:none; border:0; margin-top:12px; color:#8a897f; font-size:12px; text-decoration:underline}
+.chips{display:flex; gap:8px; justify-content:center; margin:6px 0 10px; flex-wrap:wrap}
+.chip{border:1.3px solid #c9c7bd; border-radius:16px; padding:7px 13px; font-size:13px; font-weight:700; color:#444441; background:#fff; min-height:40px}
+.chip.sel{background:#2c2c2a; color:#fff; border-color:#2c2c2a}
+
+/* 終了画面 */
+#end{position:absolute; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; padding:20px;
+  background:radial-gradient(circle at 25% 10%, #3FA98A 0%, transparent 50%), radial-gradient(circle at 85% 90%, #1F6E56 0%, transparent 55%), #0B1613}
+#end .bye{font-size:22px; font-weight:800; margin-bottom:14px}
+#end .box{width:100%; max-width:330px; background:#fff; color:#2c2c2a; border-radius:18px; padding:16px; font-size:13px; line-height:1.7}
+#end dl{margin:0 0 6px; display:grid; grid-template-columns:auto 1fr; gap:2px 12px}
+#end dt{color:#8a897f}
+#end dd{margin:0; text-align:right; font-weight:700}
+#end .wrap{text-align:center}
+
+/* ---------- 設定パネル ---------- */
+#gear{position:absolute; top:calc(env(safe-area-inset-top,0px) + 8px); left:10px; z-index:95; border:0; background:rgba(0,0,0,.45); color:#fff; border-radius:16px; padding:7px 12px; font-size:12px; opacity:.6}
+body.nogear #gear{display:none}
+#panel{position:absolute; left:0; right:0; bottom:0; z-index:200; max-height:82%; overflow:auto; background:#fff; color:#22221f; border-radius:18px 18px 0 0; padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px)); transform:translateY(105%); transition:transform .28s ease}
+#panel.open{transform:none}
+#panel .head{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px}
+#panel button{border:1px solid #dddbd2; background:#ecebe4; color:#22221f; border-radius:10px; padding:9px 12px; font-size:13px}
+#panel button.main{background:#0f6e56; border-color:#0f6e56; color:#fff; font-weight:700}
+#panel .row{display:flex; gap:8px; margin-top:12px}
+#panel .row button{flex:1}
+#panel .wide{width:100%; margin-top:8px}
+#panel h3{font-size:12px; color:#6b6a64; margin:14px 0 4px}
+#panel label{display:flex; align-items:center; gap:10px; padding:9px 2px; font-size:14px; border-bottom:1px solid #eee}
+#panel input[type=checkbox]{width:22px; height:22px}
+#panel .id{font-size:11px; background:#ecebe4; border-radius:6px; padding:1px 6px; color:#6b6a64}
+#panel .note{font-size:11px; color:#6b6a64; line-height:1.7}
+
+/* 研究者用の確認表示(?debug=1) */
+#hud{position:absolute; top:calc(var(--tabs-top) + 40px); left:10px; z-index:20; background:rgba(0,0,0,.6); border-radius:12px; padding:8px 10px; font-size:11px; line-height:1.7; pointer-events:none; white-space:pre}

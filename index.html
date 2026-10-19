@@ -7,34 +7,53 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
-<title>ショート動画 離脱UI(色彩低減)</title>
+<title>ショート動画 離脱UI(11案)</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="app">
-  <div id="feed"></div>
 
-  <div class="tabs"><span>フォロー中</span><span class="on">おすすめ</span></div>
-
-  <nav class="nav">
-    <div class="on"><svg viewBox="0 0 24 24"><path d="M12 2.8L3 10.3V21a1 1 0 001 1h6v-7.5h4V22h6a1 1 0 001-1V10.3L12 2.8z"/></svg>ホーム</div>
-    <div><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 015.9 12.1l5.3 5.3-1.4 1.4-5.3-5.3A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z"/></svg>検索</div>
-    <div><span class="plus">+</span></div>
-    <div><svg viewBox="0 0 24 24"><path d="M3 5h18a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V6a1 1 0 011-1zm1 2.4V16h16V7.4l-8 5.6-8-5.6z"/></svg>受信箱</div>
-    <div><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5z"/></svg>プロフィール</div>
-  </nav>
-
-  <!-- 研究者用の確認表示(?debug=1 のときだけ表示) -->
-  <div id="hud" hidden>
-    <div>経過 <b id="hTime">00:00</b></div>
-    <div>彩度 <b id="hSat">100%</b></div>
-    <div>視聴 <b id="hVids">1本</b></div>
-    <div>版 <b id="hVer">-</b></div>
-    <div class="btns">
-      <button id="bSkip">+10秒</button>
-      <button id="bReset">最初から</button>
+  <!-- スマホ画面(A16の画面反転は、この要素ごと回転する) -->
+  <div id="screen">
+    <div id="feed"></div>
+    <div class="tabs"><span>フォロー中</span><span class="on">おすすめ</span></div>
+    <div class="pills">
+      <div class="pill" id="clock" hidden></div>   <!-- A02 視聴時間 -->
+      <div class="pill" id="dist" hidden></div>    <!-- A01 スクロール距離 -->
     </div>
+    <div id="cue" hidden>                          <!-- A12 スワイプ方向の矢印 -->
+      <svg viewBox="0 0 100 100"><path d="M50 6 L86 46 H63 V94 H37 V46 H14 Z"/></svg>
+      <span>この方向にスワイプ</span>
+    </div>
+    <div id="toast"></div>
+    <nav class="nav">
+      <div class="on"><svg viewBox="0 0 24 24"><path d="M12 2.8L3 10.3V21a1 1 0 001 1h6v-7.5h4V22h6a1 1 0 001-1V10.3L12 2.8z"/></svg>ホーム</div>
+      <div><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 015.9 12.1l5.3 5.3-1.4 1.4-5.3-5.3A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z"/></svg>検索</div>
+      <div><span class="plus">+</span></div>
+      <div><svg viewBox="0 0 24 24"><path d="M3 5h18a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V6a1 1 0 011-1zm1 2.4V16h16V7.4l-8 5.6-8-5.6z"/></svg>受信箱</div>
+      <div><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5z"/></svg>プロフィール</div>
+    </nav>
   </div>
+
+  <!-- 反転しない部分 -->
+  <button id="gear">⚙ 設定</button>
+  <div id="hud" hidden></div>
+  <div id="dlg" hidden></div>
+  <div id="end" hidden></div>
+
+  <!-- 11案のON/OFF -->
+  <aside id="panel">
+    <div class="head"><b>案のON/OFF</b><button id="bClose">閉じる</button></div>
+    <div id="list"></div>
+    <div class="row">
+      <button id="bRestart" class="main">最初から</button>
+      <button id="bAll">すべてON</button>
+      <button id="bNone">すべてOFF</button>
+    </div>
+    <button id="bCopy" class="wide">この設定のリンクをコピー</button>
+    <p class="note">切り替えると、最初から始まります。画面が変わる案は、30秒で変化が最大になります。</p>
+  </aside>
+
 </div>
 <script src="script.js"></script>
 </body>
