@@ -53,10 +53,6 @@ body{position:fixed; inset:0; width:100%; overflow:hidden; user-select:none; -we
 .nav svg{width:24px; height:24px; fill:#fff}
 .nav .plus{width:44px; height:30px; border-radius:8px; background:#fff; color:#000; font-size:22px; font-weight:800; display:flex; align-items:center; justify-content:center; line-height:1}
 
-/* 彩度の表示(画面上部の中央) */
-.satpill{position:absolute; top:calc(var(--tabs-top) + 34px); left:50%; transform:translateX(-50%); z-index:10; pointer-events:none;
-  background:rgba(0,0,0,.42); border-radius:16px; padding:5px 16px; font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap}
-.satpill[hidden]{display:none}
 /* ---------- 研究者用 ---------- */
 #hud{position:absolute; top:calc(var(--tabs-top) + 84px); left:10px; z-index:20; background:rgba(0,0,0,.6); border-radius:12px; padding:8px 10px; font-size:11px; line-height:1.7}
 #hud b{font-variant-numeric:tabular-nums}

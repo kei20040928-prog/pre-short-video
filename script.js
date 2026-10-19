@@ -1,12 +1,11 @@
 'use strict';
 /* ショート動画 離脱UI プロトタイプ(色彩低減)
  *
- * 開いてから60秒かけて、画面全体の彩度を100%から0%(完全なモノクロ)まで、一定の速さで下げる。
+ * 開いてから30秒かけて、画面全体の彩度を100%から0%(完全なモノクロ)まで、一定の速さで下げる。
  * URLパラメータ(研究者用):
- *   ?duration=60  彩度が最小になるまでの時間(秒)。既定 60
+ *   ?duration=30  彩度が最小になるまでの時間(秒)。既定 30
  *   ?delay=0      彩度の低下を始めるまでの時間(秒)。既定 0
  *   ?to=0         最小の彩度(1 = 通常、0 = 白黒)。既定 0
- *   ?label=0      画面上部の「彩度 NN%」の表示を隠す
  *   ?debug=1      経過時間・彩度の表示と、+10秒/最初からのボタンを出す
  */
 
@@ -256,13 +255,10 @@ function desatHex(hex, sat) {
   return `rgb(${m(c[0])},${m(c[1])},${m(c[2])})`;
 }
 let lastUiSat = -1;
-const satPill = $('#satPill');
-if (params.get('label') === '0') satPill.hidden = true;
 function applyUiSaturation(sat) {
   if (Math.abs(sat - lastUiSat) < 0.004) return;
   lastUiSat = sat;
   for (const k in UI_COLORS) app.style.setProperty(k, desatHex(UI_COLORS[k], sat));
-  satPill.textContent = '彩度 ' + Math.round(sat * 100) + '%';
 }
 
 /* ---------------- 研究者用の表示 ---------------- */
